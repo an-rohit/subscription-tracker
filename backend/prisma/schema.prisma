@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./node_modules/@prisma/client"
+}
+
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  directUrl         = env("DIRECT_URL")
+}
+
+model User {
+  id           Int            @id @default(autoincrement())
+  name         String
+  email        String         @unique
+  passwordHash String         @map("password_hash")
+  timezone     String         @default("Asia/Kolkata")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  subscriptions Subscription[]
+
+  @@map("users")
+}
+
+model Category {
+  id            Int            @id @default(autoincrement())
+  name          String
+  icon          String?
+  subscriptions Subscription[]
+
+  @@map("categories")
+}
+
+model Subscription {
+  id              Int              @id @default(autoincrement())
+  userId          Int              @map("user_id")
+  categoryId      Int?             @map("category_id")
+  name            String
+  cost            Decimal          @db.Decimal(10, 2)
+  billingCycle    String           @map("billing_cycle")
+  nextRenewalDate DateTime         @map("next_renewal_date") @db.Date
+  currency        String           @default("INR")
+  status          String           @default("active")
+  domain          String?         
+  createdAt       DateTime         @default(now()) @map("created_at")
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category        Category?        @relation(fields: [categoryId], references: [id])
+  paymentHistory  PaymentHistory[]
+
+  @@map("subscriptions")
+}
+
+model PaymentHistory {
+  id             Int          @id @default(autoincrement())
+  subscriptionId Int          @map("subscription_id")
+  amountPaid     Decimal      @map("amount_paid") @db.Decimal(10, 2)
+  paymentDate    DateTime     @default(now()) @map("payment_date") @db.Date
+  notes          String?
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@map("payment_history")
+}
