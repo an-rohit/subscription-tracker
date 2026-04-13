@@ -24,7 +24,7 @@ const callAI = async (systemPrompt, userMessage, modelIndex = 0, retries = 2) =>
         headers: {
           Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
           'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://subscription-tracker-api-sf0z.onrender.com',
+          'HTTP-Referer': 'http://localhost:5000',
           'X-Title': 'Subscription Tracker',
         },
         timeout: 30000, // 30 second timeout
