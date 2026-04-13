@@ -1,11 +1,5 @@
 const express = require('express');
-app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'https://subscription-tracker-pearl-nine.vercel.app/', 
-  ],
-  credentials: true,
-}));
+const cors = require('cors');
 require('dotenv').config();
 
 const authRoutes         = require('./routes/auth.routes');
@@ -16,7 +10,14 @@ const aiRoutes           = require('./routes/ai.routes');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'https://subscription-tracker-pearl-nine.vercel.app/',
+  ],
+  credentials: true,
+}));
+
 app.use(express.json());
 
 app.use('/api/auth',          authRoutes);
@@ -31,7 +32,6 @@ app.get('/', (req, res) => {
 app.get('/ping', (req, res) => {
   res.json({ status: 'alive' });
 });
-
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
