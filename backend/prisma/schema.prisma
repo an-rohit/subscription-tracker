@@ -38,7 +38,6 @@ model Subscription {
   billingCycle    String           @map("billing_cycle")
   nextRenewalDate DateTime         @map("next_renewal_date") @db.Date
   currency        String           @default("INR")
-  domain          String?
   status          String           @default("active")
   createdAt       DateTime         @default(now()) @map("created_at")
   user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
