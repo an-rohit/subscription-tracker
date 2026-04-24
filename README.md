@@ -104,7 +104,6 @@ Category → Subscriptions
 
 ## 📁 Project Structure
 
-```text
 subscription-tracker/
 ├── backend/
 │   ├── prisma/
