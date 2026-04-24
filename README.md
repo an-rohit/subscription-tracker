@@ -104,27 +104,27 @@ Category → Subscriptions
 
 ## 📁 Project Structure
 
-```
-
+```text
 subscription-tracker/
 ├── backend/
 │   ├── prisma/
-│   └── src/
-│       ├── controllers/
-│       ├── routes/
-│       ├── middleware/
-│       ├── services/
-│       └── app.js
+│   │   └── schema.prisma
+│   ├── src/
+│   │   ├── controllers/
+│   │   ├── routes/
+│   │   ├── middleware/
+│   │   ├── services/
+│   │   └── app.js
 │
 └── frontend/
-└── src/
-├── components/
-├── pages/
-├── context/
-├── services/
-└── App.jsx
-
-````
+    └── src/
+        ├── components/
+        ├── pages/
+        ├── context/
+        ├── services/
+        ├── App.jsx
+        └── main.jsx
+```
 
 ---
 
