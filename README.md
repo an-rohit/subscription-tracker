@@ -235,9 +235,13 @@ npm run dev
 
 ## 📸 Screenshots
 <img width="1074" height="723" alt="image" src="https://github.com/user-attachments/assets/66262413-3e29-4f24-b367-f2014e7c2a7e" />
+
 <img width="752" height="635" alt="image" src="https://github.com/user-attachments/assets/ee23a13a-958b-4898-876c-e278eb6a2201" />
+
 <img width="1716" height="708" alt="image" src="https://github.com/user-attachments/assets/9d7b8f1b-a01b-4029-afa1-984360367b62" />
+
 <img width="1717" height="711" alt="image" src="https://github.com/user-attachments/assets/bd38dbaa-d4f4-4d05-91e4-0022216cfa02" />
+
 <img width="1674" height="697" alt="image" src="https://github.com/user-attachments/assets/60dc970b-6ff0-43b9-8028-9836895b33e6" />
 
 
@@ -247,7 +251,7 @@ npm run dev
 
 **Rohit**
 Computer Science Undergraduate
-GitHub: [@your-username](https://github.com/an-rohit)
+GitHub: [@an-rohit](https://github.com/an-rohit)
 
 ---
 
