@@ -81,8 +81,7 @@ const getSubscriptionById = async (req, res) => {
 // PUT /api/subscriptions/:id
 const updateSubscription = async (req, res) => {
   try {
-    const { name, cost, billingCycle, nextRenewalDate, categoryId, currency, status } = req.body;
-
+const { name, cost, billingCycle, nextRenewalDate, categoryId, currency, status, domain } = req.body;
     const existing = await prisma.subscription.findFirst({
       where: { id: parseInt(req.params.id), userId: req.userId },
     });
