@@ -31,18 +31,19 @@ export default function Login() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: '#f5f5f5',
+      background: 'var(--bg)',
     }}>
       <div style={{
-        background: '#fff',
+        background: 'var(--surface)',
         padding: '40px',
         borderRadius: '16px',
         width: '100%',
         maxWidth: '400px',
-        border: '1px solid #e5e7eb',
+        border: '1px solid var(--border)',
+        boxShadow: 'var(--shadow)',
       }}>
         <h1 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '8px' }}>Welcome back</h1>
-        <p style={{ color: '#666', marginBottom: '24px', fontSize: '14px' }}>Sign in to your account</p>
+        <p style={{ color: 'var(--text-muted)', marginBottom: '24px', fontSize: '14px' }}>Sign in to your account</p>
 
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '16px' }}>
@@ -76,7 +77,7 @@ export default function Login() {
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '14px', color: '#666' }}>
+        <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '14px', color: 'var(--text-muted)' }}>
           No account?{' '}
           <Link to="/register" style={{ color: '#6366f1', textDecoration: 'none', fontWeight: 500 }}>
             Sign up

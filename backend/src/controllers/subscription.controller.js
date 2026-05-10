@@ -1,18 +1,28 @@
 const prisma = require('../config/db');
 
+const parsePositiveCost = (cost) => {
+  const parsedCost = Number(cost);
+  return Number.isFinite(parsedCost) && parsedCost > 0 ? parsedCost : null;
+};
+
 // POST /api/subscriptions
 const createSubscription = async (req, res) => {
   try {
     const { name, cost, billingCycle, nextRenewalDate, categoryId, currency, domain } = req.body;
-    if (!name || !cost || !billingCycle || !nextRenewalDate) {
+    if (!name || cost === undefined || cost === '' || !billingCycle || !nextRenewalDate) {
       return res.status(400).json({ message: 'Name, cost, billing cycle and renewal date are required' });
+    }
+
+    const parsedCost = parsePositiveCost(cost);
+    if (parsedCost === null) {
+      return res.status(400).json({ message: 'Cost must be a positive amount' });
     }
 
     const subscription = await prisma.subscription.create({
   data: {
     userId: req.userId,
     name,
-    cost: parseFloat(cost),
+    cost: parsedCost,
     billingCycle,
     nextRenewalDate: new Date(nextRenewalDate),
     categoryId: categoryId ? parseInt(categoryId) : null,
@@ -90,11 +100,16 @@ const { name, cost, billingCycle, nextRenewalDate, categoryId, currency, status,
       return res.status(404).json({ message: 'Subscription not found' });
     }
 
+    const parsedCost = cost !== undefined && cost !== '' ? parsePositiveCost(cost) : undefined;
+    if (cost !== undefined && cost !== '' && parsedCost === null) {
+      return res.status(400).json({ message: 'Cost must be a positive amount' });
+    }
+
     const updated = await prisma.subscription.update({
       where: { id: parseInt(req.params.id) },
       data: {
         ...(name && { name }),
-        ...(cost && { cost: parseFloat(cost) }),
+        ...(parsedCost !== undefined && { cost: parsedCost }),
         ...(billingCycle && { billingCycle }),
         ...(nextRenewalDate && { nextRenewalDate: new Date(nextRenewalDate) }),
         ...(categoryId && { categoryId: parseInt(categoryId) }),
