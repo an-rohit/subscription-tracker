@@ -19,18 +19,18 @@ const createSubscription = async (req, res) => {
     }
 
     const subscription = await prisma.subscription.create({
-  data: {
-    userId: req.userId,
-    name,
-    cost: parsedCost,
-    billingCycle,
-    nextRenewalDate: new Date(nextRenewalDate),
-    categoryId: categoryId ? parseInt(categoryId) : null,
-    currency: currency || 'INR',
-    domain: domain || null,
-  },
-  include: { category: true },
-});
+      data: {
+        userId: req.userId,
+        name,
+        cost: parsedCost,
+        billingCycle,
+        nextRenewalDate: new Date(nextRenewalDate),
+        categoryId: categoryId ? parseInt(categoryId) : null,
+        currency: currency || 'INR',
+        domain: domain || null,
+      },
+      include: { category: true },
+    });
 
     res.status(201).json({
       message: 'Subscription added successfully',

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 
@@ -57,7 +57,7 @@ const getNextRenewalDate = (billingCycle = 'monthly') => {
   return date.toISOString().split('T')[0];
 };
 
-const parseChatDetails = (message, currentDraft = {}) => {
+const parseChatDetails = (message, currentDraft = {}, expectedField = null) => {
 
   const text = message.trim();
   const lower = text.toLowerCase();
@@ -88,8 +88,13 @@ const parseChatDetails = (message, currentDraft = {}) => {
     }
   });
 
+  const categoryByName = CATEGORIES.find(category =>
+    lower.includes(category.name.toLowerCase())
+  );
+  if (categoryByName) parsed.categoryId = categoryByName.id;
+
   const costMatch = text.match(/(?:rs|inr|₹)?\s*(\d+(?:\.\d+)?)/i);
-  if (costMatch) parsed.cost = costMatch[1];
+  if (costMatch && expectedField !== 'nextRenewalDate') parsed.cost = costMatch[1];
 
   if (lower.includes('year') || lower.includes('annual')) {
     parsed.billingCycle = 'yearly';
@@ -103,11 +108,14 @@ const parseChatDetails = (message, currentDraft = {}) => {
 
   const dateMatch = text.match(/\d{4}-\d{2}-\d{2}/);
   if (dateMatch) parsed.nextRenewalDate = dateMatch[0];
+  if (expectedField === 'nextRenewalDate' && !dateMatch && ['yes', 'default', 'next', 'ok', 'okay'].some(word => lower.includes(word))) {
+    parsed.nextRenewalDate = getNextRenewalDate(currentDraft.billingCycle);
+  }
 
   const domainMatch = text.match(/([a-z0-9-]+\.(com|in|io|so|net|org|app|co))/i);
   if (domainMatch) parsed.domain = domainMatch[1].toLowerCase();
 
-  if (!currentDraft.name) {
+  if (expectedField === 'name' || !currentDraft.name) {
     const beforeCost = text
       .split(/\d/)[0]
       .replace(/\b(add|subscription|for|costs?|rs|inr|monthly|yearly|weekly|per|month|year|week)\b/gi, '')
@@ -123,12 +131,16 @@ const parseChatDetails = (message, currentDraft = {}) => {
     }
   }
 
+  if (expectedField === 'categoryId' && !parsed.categoryId) {
+    parsed.categoryId = 7;
+  }
+
   return parsed;
 };
 
 const getMissingDraftField = (draft) => {
   if (!draft.name) return 'name';
-    if (!draft.categoryId) return 'categoryId';
+  if (!draft.categoryId) return 'categoryId';
   if (!Number.isFinite(Number(draft.cost)) || Number(draft.cost) <= 0) return 'cost';
 
   if (!draft.billingCycle) return 'billingCycle';
@@ -161,12 +173,17 @@ const getAssistantQuestion = (field, draft) => {
 const emptyForm = {
   name: '',
   cost: '',
-  billingCycle: '',
+  billingCycle: 'monthly',
   nextRenewalDate: '',
   categoryId: '',
   currency: 'INR',
   status: 'active',
   domain: '',
+};
+
+const emptyChatDraft = {
+  ...emptyForm,
+  billingCycle: '',
 };
 
 const SubscriptionLogo = ({ domain, name }) => {
@@ -209,10 +226,9 @@ export default function Subscriptions() {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [nlInput, setNlInput] = useState('');
-  const [nlLoading, setNlLoading] = useState(false);
   const [showAiChat, setShowAiChat] = useState(false);
   const [chatInput, setChatInput] = useState('');
-  const [chatDraft, setChatDraft] = useState(emptyForm);
+  const [chatDraft, setChatDraft] = useState(emptyChatDraft);
   const [chatLoading, setChatLoading] = useState(false);
   const [chatMessages, setChatMessages] = useState([
     { role: 'assistant', text: 'Tell me what subscription you want to add. You can say something like: Netflix 499 monthly.' },
@@ -226,7 +242,7 @@ export default function Subscriptions() {
     try {
       const res = await api.get('/subscriptions');
       setSubscriptions(res.data.subscriptions);
-    } catch (err) {
+    } catch {
       toast.error('Failed to load subscriptions');
     } finally {
       setLoading(false);
@@ -279,38 +295,16 @@ export default function Subscriptions() {
       await api.delete(`/subscriptions/${id}`);
       toast.success('Subscription deleted');
       fetchSubscriptions();
-    } catch (err) {
+    } catch {
       toast.error('Failed to delete');
     }
   };
 
-  const handleNLParse = async () => {
-  if (!nlInput.trim()) return;
-  setNlLoading(true);
-  try {
-    const res = await api.post('/ai/parse-subscription', { text: nlInput });
-    setForm({ ...emptyForm, ...res.data.parsed, categoryId: '' });
-    setShowModal(true);
-    setNlInput('');
-    if (res.data.fallback) {
-      toast('AI was busy — used smart fallback. Please review!', { icon: '⚠️' });
-    } else {
-      toast.success('Subscription parsed! Review and save.');
-    }
-  } catch (err) {
-    toast.error('Could not parse. Opening manual form...');
-    setForm({ ...emptyForm, name: nlInput });
-    setShowModal(true);
-    setNlInput('');
-  } finally {
-    setNlLoading(false);
-  }
-};
 
   const openAiChat = () => {
     setShowAiChat(true);
     setChatInput('');
-    setChatDraft(emptyForm);
+    setChatDraft(emptyChatDraft);
     setChatMessages([
       { role: 'assistant', text: 'Tell me what subscription you want to add.' },
     ]);
@@ -319,11 +313,12 @@ export default function Subscriptions() {
   const mergeChatDraft = (current, incoming) => {
     const cleanIncoming = { ...incoming };
     if (current.name && cleanIncoming.name) delete cleanIncoming.name;
+    if (current.cost && cleanIncoming.cost) delete cleanIncoming.cost;
+    if (current.billingCycle && cleanIncoming.billingCycle) delete cleanIncoming.billingCycle;
+    if (current.nextRenewalDate && cleanIncoming.nextRenewalDate) delete cleanIncoming.nextRenewalDate;
+    if (!Number.isFinite(Number(cleanIncoming.cost)) || Number(cleanIncoming.cost) <= 0) delete cleanIncoming.cost;
     const next = { ...current, ...cleanIncoming };
     if (next.name && !next.domain) next.domain = guessDomain(next.name);
-    // if (next.billingCycle && !next.nextRenewalDate) {
-    //   next.nextRenewalDate = getNextRenewalDate(next.billingCycle);
-    // }
     next.currency = next.currency || 'INR';
     next.status = next.status || 'active';
     return next;
@@ -337,13 +332,20 @@ export default function Subscriptions() {
     setChatMessages(prev => [...prev, { role: 'user', text: message }]);
     setChatLoading(true);
 
-    let parsed = parseChatDetails(message, chatDraft);
+    const expectedField = getMissingDraftField(chatDraft);
+    let parsed = parseChatDetails(message, chatDraft, expectedField);
 
-    try {
-      const res = await api.post('/ai/parse-subscription', { text: message });
-      parsed = { ...parsed, ...res.data.parsed };
-    } catch (err) {
-      // Local guided parser keeps the chat useful even when AI is unavailable.
+    if (!chatDraft.name) {
+      try {
+        const res = await api.post('/ai/parse-subscription', { text: message });
+        parsed = { ...res.data.parsed, ...parsed };
+        if (!/(month|monthly|year|yearly|annual|week|weekly)/i.test(message)) {
+          delete parsed.billingCycle;
+          delete parsed.nextRenewalDate;
+        }
+      } catch {
+        // Local guided parser keeps the chat useful even when AI is unavailable.
+      }
     }
 
     const nextDraft = mergeChatDraft(chatDraft, parsed);
@@ -356,7 +358,7 @@ export default function Subscriptions() {
         role: 'assistant',
         text: missing
           ? getAssistantQuestion(missing, nextDraft)
-          : 'Great, I have everything. Check the preview ,add the respective category and tap Save subscription.',
+          : 'Great, I have everything. Check the preview and tap Save subscription.',
       },
     ]);
     setChatLoading(false);
@@ -373,7 +375,7 @@ export default function Subscriptions() {
       await api.post('/subscriptions', chatDraft);
       toast.success('Subscription added from AI chat!');
       setShowAiChat(false);
-      setChatDraft(emptyForm);
+      setChatDraft(emptyChatDraft);
       fetchSubscriptions();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Could not add subscription');
@@ -400,7 +402,7 @@ export default function Subscriptions() {
       height: '80vh',
       padding: '24px',
     }}>
-      <motion.div
+      <Motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         style={{
@@ -413,7 +415,7 @@ export default function Subscriptions() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '18px' }}>
-          <motion.div
+          <Motion.div
             animate={{ scale: [1, 1.08, 1] }}
             transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
             style={{
@@ -430,14 +432,14 @@ export default function Subscriptions() {
             }}
           >
             ₹
-          </motion.div>
+          </Motion.div>
           <div style={{ flex: 1 }}>
-            <motion.div
+            <Motion.div
               animate={{ opacity: [0.45, 1, 0.45] }}
               transition={{ repeat: Infinity, duration: 1.4, ease: 'easeInOut' }}
               style={{ height: 12, width: '70%', background: 'var(--primary-soft)', borderRadius: '999px', marginBottom: '8px' }}
             />
-            <motion.div
+            <Motion.div
               animate={{ opacity: [0.35, 0.85, 0.35] }}
               transition={{ repeat: Infinity, duration: 1.4, ease: 'easeInOut', delay: 0.12 }}
               style={{ height: 10, width: '45%', background: '#dcfce7', borderRadius: '999px' }}
@@ -445,7 +447,7 @@ export default function Subscriptions() {
           </div>
         </div>
         {[0, 1, 2].map((item) => (
-          <motion.div
+          <Motion.div
             key={item}
             animate={{ x: [0, 8, 0], opacity: [0.55, 1, 0.55] }}
             transition={{ repeat: Infinity, duration: 1.7, ease: 'easeInOut', delay: item * 0.15 }}
@@ -458,7 +460,7 @@ export default function Subscriptions() {
             }}
           />
         ))}
-      </motion.div>
+      </Motion.div>
     </div>
   );
 
@@ -466,7 +468,7 @@ export default function Subscriptions() {
     <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
 
       {/* Header */}
-      <motion.div
+      <Motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}
@@ -478,27 +480,27 @@ export default function Subscriptions() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <motion.button
+          <Motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={openAiChat}
             style={{ background: '#10b981', color: '#fff', padding: '10px 18px' }}
           >
             AI Chat Add
-          </motion.button>
-          <motion.button
+          </Motion.button>
+          <Motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => { setForm(emptyForm); setEditingId(null); setShowModal(true); }}
             style={{ background: '#6366f1', color: '#fff', padding: '10px 20px' }}
           >
             + Add Subscription
-          </motion.button>
+          </Motion.button>
         </div>
-      </motion.div>
+      </Motion.div>
 
       {/* AI Chat Entry */}
-      <motion.div
+      <Motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
@@ -536,7 +538,7 @@ export default function Subscriptions() {
             }}
           />
         </div>
-        <motion.button
+        <Motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => {
@@ -552,11 +554,11 @@ export default function Subscriptions() {
           }}
         >
           Open Chat
-        </motion.button>
-      </motion.div>
+        </Motion.button>
+      </Motion.div>
 
       {/* Search and Filter */}
-      <motion.div
+      <Motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
@@ -578,19 +580,19 @@ export default function Subscriptions() {
           <option value="paused">Paused</option>
           <option value="cancelled">Cancelled</option>
         </select>
-      </motion.div>
+      </Motion.div>
 
       {/* Subscriptions Grid */}
       <AnimatePresence>
         {filtered.length === 0 ? (
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             style={{ textAlign: 'center', padding: '60px', color: 'var(--text-subtle)' }}
           >
             <p style={{ fontSize: '48px', marginBottom: '16px' }}>📭</p>
             <p style={{ fontSize: '16px' }}>No subscriptions found</p>
-          </motion.div>
+          </Motion.div>
         ) : (
           <div style={{
             display: 'grid',
@@ -598,7 +600,7 @@ export default function Subscriptions() {
             gap: '16px',
           }}>
             {filtered.map((sub, i) => (
-              <motion.div
+              <Motion.div
                 key={sub.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -645,24 +647,24 @@ export default function Subscriptions() {
                 </div>
 
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <motion.button
+                  <Motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => handleEdit(sub)}
                     style={{ flex: 1, background: 'var(--surface-muted)', color: 'var(--text)', padding: '8px' }}
                   >
                     ✏️ Edit
-                  </motion.button>
-                  <motion.button
+                  </Motion.button>
+                  <Motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => handleDelete(sub.id)}
                     style={{ flex: 1, background: '#fee2e2', color: '#dc2626', padding: '8px' }}
                   >
                     🗑️ Delete
-                  </motion.button>
+                  </Motion.button>
                 </div>
-              </motion.div>
+              </Motion.div>
             ))}
           </div>
         )}
@@ -671,7 +673,7 @@ export default function Subscriptions() {
       {/* AI Chat Modal */}
       <AnimatePresence>
         {showAiChat && (
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -687,7 +689,7 @@ export default function Subscriptions() {
             }}
             onClick={(e) => e.target === e.currentTarget && setShowAiChat(false)}
           >
-            <motion.div
+            <Motion.div
               initial={{ opacity: 0, scale: 0.94, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.94 }}
@@ -733,7 +735,7 @@ export default function Subscriptions() {
                   border: '1px solid var(--border)',
                 }}>
                   {chatMessages.map((message, index) => (
-                    <motion.div
+                    <Motion.div
                       key={index}
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -750,7 +752,7 @@ export default function Subscriptions() {
                       }}
                     >
                       {message.text}
-                    </motion.div>
+                    </Motion.div>
                   ))}
                   {chatLoading && (
                     <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Thinking...</div>
@@ -796,6 +798,7 @@ export default function Subscriptions() {
                   </div>
 
                   {[
+                    ['Category', CATEGORIES.find(category => category.id === Number(chatDraft.categoryId))?.name || 'Needed'],
                     ['Cost', chatDraft.cost ? `Rs ${chatDraft.cost}` : 'Needed'],
                     ['Cycle', chatDraft.billingCycle || 'Needed'],
                     ['Next renewal', chatDraft.nextRenewalDate || 'Needed'],
@@ -836,15 +839,15 @@ export default function Subscriptions() {
                   Edit in form
                 </button>
               </div>
-            </motion.div>
-          </motion.div>
+            </Motion.div>
+          </Motion.div>
         )}
       </AnimatePresence>
 
       {/* Modal */}
       <AnimatePresence>
         {showModal && (
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -860,7 +863,7 @@ export default function Subscriptions() {
             }}
             onClick={(e) => e.target === e.currentTarget && setShowModal(false)}
           >
-            <motion.div
+            <Motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9 }}
@@ -892,7 +895,7 @@ export default function Subscriptions() {
       overflowY: 'auto',
     }}>
       {POPULAR_SUBSCRIPTIONS.map((sub, i) => (
-        <motion.button
+        <Motion.button
           key={i}
           type="button"
           whileHover={{ scale: 1.05 }}
@@ -928,7 +931,7 @@ export default function Subscriptions() {
           <span style={{ fontSize: '10px', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.2 }}>
             {sub.name}
           </span>
-        </motion.button>
+        </Motion.button>
       ))}
     </div>
   </div>    
@@ -1044,7 +1047,7 @@ export default function Subscriptions() {
                 </div>
 
                 <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
-                  <motion.button
+                  <Motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     type="button"
@@ -1052,19 +1055,19 @@ export default function Subscriptions() {
                     style={{ flex: 1, background: 'var(--surface-muted)', color: 'var(--text)', padding: '12px' }}
                   >
                     Cancel
-                  </motion.button>
-                  <motion.button
+                  </Motion.button>
+                  <Motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     type="submit"
                     style={{ flex: 1, background: '#6366f1', color: '#fff', padding: '12px' }}
                   >
                     {editingId ? 'Update' : 'Add Subscription'}
-                  </motion.button>
+                  </Motion.button>
                 </div>
               </form>
-            </motion.div>
-          </motion.div>
+            </Motion.div>
+          </Motion.div>
         )}
       </AnimatePresence>
     </div>

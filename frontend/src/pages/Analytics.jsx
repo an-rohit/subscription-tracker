@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import {
   PieChart, Pie, Cell, Tooltip,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer,
@@ -65,7 +65,7 @@ export default function Analytics() {
       setSummary(summaryRes.data);
       setByCategory(categoryRes.data.byCategory);
       setYearly(yearlyRes.data.yearlyBreakdown);
-    } catch (err) {
+    } catch {
       toast.error('Failed to load analytics');
     } finally {
       setLoading(false);
@@ -93,7 +93,7 @@ export default function Analytics() {
 
   if (loading) return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
-      <motion.div
+      <Motion.div
         animate={{ rotate: 360 }}
         transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
         style={{ width: 40, height: 40, border: '4px solid var(--border)', borderTopColor: '#6366f1', borderRadius: '50%' }}
@@ -102,20 +102,20 @@ export default function Analytics() {
   );
 
   return (
-    <motion.div
+    <Motion.div
       initial="hidden"
       animate="show"
       variants={stagger}
       style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}
     >
-      <motion.div variants={fadeUp} style={{ marginBottom: '24px' }}>
+      <Motion.div variants={fadeUp} style={{ marginBottom: '24px' }}>
         <h1 style={{ fontSize: '28px', fontWeight: 850, lineHeight: 1.15 }}>Analytics</h1>
         <p style={{ color: 'var(--text-muted)', marginTop: '6px', fontSize: '15px', lineHeight: 1.5 }}>
           Understand your subscription spending
         </p>
-      </motion.div>
+      </Motion.div>
 
-      <motion.div
+      <Motion.div
         variants={stagger}
         style={{
           display: 'grid',
@@ -129,8 +129,8 @@ export default function Analytics() {
           { label: 'Yearly Spend', value: formatCurrency(summary?.estimatedYearlySpend), color: '#10b981' },
           { label: 'Active Subs', value: summary?.totalActiveSubscriptions || 0, color: '#f59e0b' },
           { label: 'Categories', value: byCategory.length, color: '#8b5cf6' },
-        ].map((card, i) => (
-          <motion.div
+        ].map((card) => (
+          <Motion.div
             key={card.label}
             variants={fadeUp}
             whileHover={{ scale: 1.03, boxShadow: '0 8px 24px rgba(0,0,0,0.08)' }}
@@ -142,15 +142,15 @@ export default function Analytics() {
             <p style={{ fontSize: '28px', lineHeight: 1.1, fontWeight: 850, color: card.color, fontVariantNumeric: 'tabular-nums' }}>
               {card.value}
             </p>
-          </motion.div>
+          </Motion.div>
         ))}
-      </motion.div>
+      </Motion.div>
 
-      <motion.div
+      <Motion.div
         variants={stagger}
         style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}
       >
-        <motion.div variants={fadeUp} style={{ ...cardStyle, position: 'relative', overflow: 'hidden' }}>
+        <Motion.div variants={fadeUp} style={{ ...cardStyle, position: 'relative', overflow: 'hidden' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'flex-start', marginBottom: '12px' }}>
             <div>
               <h2 style={{ fontSize: '18px', fontWeight: 800, lineHeight: 1.25 }}>Spending by Category</h2>
@@ -209,7 +209,7 @@ export default function Analytics() {
                   placeItems: 'center',
                   pointerEvents: 'none',
                 }}>
-                  <motion.div
+                  <Motion.div
                     key={highlightedCategory?.category}
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -221,7 +221,7 @@ export default function Analytics() {
                     <p style={{ color: 'var(--text)', fontSize: '24px', fontWeight: 850, fontVariantNumeric: 'tabular-nums' }}>
                       {formatCurrency(highlightedCategory?.totalMonthly || totalMonthly)}
                     </p>
-                  </motion.div>
+                  </Motion.div>
                 </div>
               </div>
 
@@ -246,9 +246,9 @@ export default function Analytics() {
               </div>
             </>
           )}
-        </motion.div>
+        </Motion.div>
 
-        <motion.div variants={fadeUp} style={cardStyle}>
+        <Motion.div variants={fadeUp} style={cardStyle}>
           <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '4px' }}>
             Category Breakdown
           </h2>
@@ -283,10 +283,10 @@ export default function Analytics() {
               </BarChart>
             </ResponsiveContainer>
           )}
-        </motion.div>
-      </motion.div>
+        </Motion.div>
+      </Motion.div>
 
-      <motion.div variants={fadeUp} style={{ ...cardStyle, marginBottom: '24px' }}>
+      <Motion.div variants={fadeUp} style={{ ...cardStyle, marginBottom: '24px' }}>
         <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '4px' }}>
           Monthly Spending Trend
         </h2>
@@ -317,9 +317,9 @@ export default function Analytics() {
             </LineChart>
           </ResponsiveContainer>
         )}
-      </motion.div>
+      </Motion.div>
 
-      <motion.div variants={fadeUp} style={cardStyle}>
+      <Motion.div variants={fadeUp} style={cardStyle}>
         <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '16px' }}>
           Category Details
         </h2>
@@ -337,7 +337,7 @@ export default function Analytics() {
             </thead>
             <tbody>
               {byCategory.map((cat, i) => (
-                <motion.tr
+                <Motion.tr
                   key={cat.category}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -361,7 +361,7 @@ export default function Analytics() {
                   <td style={{ padding: '12px 10px', textAlign: 'right', fontWeight: 750, color: '#10b981' }}>
                     {formatCurrency(cat.totalMonthly * 12)}
                   </td>
-                </motion.tr>
+                </Motion.tr>
               ))}
             </tbody>
             <tfoot>
@@ -378,7 +378,7 @@ export default function Analytics() {
             </tfoot>
           </table>
         )}
-      </motion.div>
-    </motion.div>
+      </Motion.div>
+    </Motion.div>
   );
 }

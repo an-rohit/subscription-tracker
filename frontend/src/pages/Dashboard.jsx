@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
@@ -19,8 +19,6 @@ export default function Dashboard() {
   const [summary, setSummary] = useState(null);
   const [upcoming, setUpcoming] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
-  const [aiInsight, setAiInsight] = useState('');
-  const [loadingAI, setLoadingAI] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState('Monthly Spend');
@@ -44,23 +42,11 @@ export default function Dashboard() {
       setUpcoming(upcomingRes.data.upcomingRenewals);
       setSubscriptions(subsRes.data.subscriptions);
       setSelectedSubscriptionId(current => current || subsRes.data.subscriptions?.[0]?.id || null);
-    } catch (err) {
+    } catch {
       toast.error('Failed to load dashboard data');
     } finally {
       setLoading(false);
       setRefreshing(false);
-    }
-  };
-
-  const getAIInsight = async () => {
-    setLoadingAI(true);
-    try {
-      const res = await api.post('/ai/analyze');
-      setAiInsight(res.data.insight);
-    } catch (err) {
-      toast.error('AI analysis failed. Try again.');
-    } finally {
-      setLoadingAI(false);
     }
   };
 
@@ -117,7 +103,7 @@ export default function Dashboard() {
 
   if (loading) return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
-      <motion.div
+      <Motion.div
         animate={{ rotate: 360 }}
         transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
         style={{ width: 40, height: 40, border: '4px solid var(--border)', borderTopColor: '#6366f1', borderRadius: '50%' }}
@@ -126,13 +112,13 @@ export default function Dashboard() {
   );
 
   return (
-    <motion.div
+    <Motion.div
       initial="hidden"
       animate="show"
       variants={stagger}
       style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}
     >
-      <motion.div variants={fadeUp} style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'flex-start', marginBottom: '24px' }}>
+      <Motion.div variants={fadeUp} style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'flex-start', marginBottom: '24px' }}>
         <div>
           <h1 style={{ fontSize: '28px', fontWeight: 800, lineHeight: 1.15 }}>
             Welcome back, {user?.name}!
@@ -168,9 +154,9 @@ export default function Dashboard() {
             Add Subscription
           </Link>
         </div>
-      </motion.div>
+      </Motion.div>
 
-      <motion.div
+      <Motion.div
         variants={stagger}
         style={{
           display: 'grid',
@@ -180,7 +166,7 @@ export default function Dashboard() {
         }}
       >
         {summaryCards.map((card, i) => (
-          <motion.div
+          <Motion.div
             key={i}
             variants={fadeUp}
             whileHover={{ scale: 1.03, boxShadow: '0 8px 24px rgba(0,0,0,0.08)' }}
@@ -196,19 +182,19 @@ export default function Dashboard() {
             <p style={{ color: 'var(--text-muted)', fontSize: '13px', fontWeight: 650, lineHeight: 1.35, marginBottom: '10px' }}>
               {card.label}
             </p>
-            <motion.p
+            <Motion.p
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.1 + 0.3 }}
               style={{ fontSize: '30px', fontWeight: 800, lineHeight: 1.1, color: card.color, fontVariantNumeric: 'tabular-nums' }}
             >
               {card.value}
-            </motion.p>
-          </motion.div>
+            </Motion.p>
+          </Motion.div>
         ))}
-      </motion.div>
+      </Motion.div>
 
-      <motion.div variants={fadeUp} style={{ ...cardStyle, display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: '20px', marginBottom: '24px' }}>
+      <Motion.div variants={fadeUp} style={{ ...cardStyle, display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: '20px', marginBottom: '24px' }}>
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'center', marginBottom: '16px' }}>
             <div>
@@ -238,7 +224,7 @@ export default function Dashboard() {
             Rs {spendAmount}
           </div>
           <div style={{ height: '10px', background: 'var(--surface-muted)', borderRadius: '999px', overflow: 'hidden', marginTop: '18px' }}>
-            <motion.div
+            <Motion.div
               initial={{ width: 0 }}
               animate={{ width: `${Math.min(100, Number(summary?.totalActiveSubscriptions || 0) * 12)}%` }}
               style={{ height: '100%', background: 'linear-gradient(90deg, #6366f1, #10b981)' }}
@@ -257,13 +243,13 @@ export default function Dashboard() {
             </div>
           ))}
         </div>
-      </motion.div>
+      </Motion.div>
 
-      <motion.div
+      <Motion.div
         variants={stagger}
         style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}
       >
-        <motion.div variants={fadeUp} style={cardStyle}>
+        <Motion.div variants={fadeUp} style={cardStyle}>
           <h2 style={{ ...sectionTitleStyle, marginBottom: '16px' }}>
             Upcoming Renewals
           </h2>
@@ -271,7 +257,7 @@ export default function Dashboard() {
             <p style={{ color: 'var(--text-subtle)', fontSize: '14px', lineHeight: 1.5 }}>No renewals in the next 7 days</p>
           ) : (
             upcoming.map((sub, i) => (
-              <motion.div
+              <Motion.div
                 key={sub.id}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -307,20 +293,20 @@ export default function Dashboard() {
                   </span>
                 </div>
                 {expandedRenewalId === sub.id && (
-                  <motion.div
+                  <Motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     style={{ marginTop: '10px', padding: '10px', background: 'var(--surface-soft)', borderRadius: '10px', fontSize: '13px', color: 'var(--text-muted)' }}
                   >
                     {getDaysLeft(sub.nextRenewalDate)} days left • {sub.billingCycle} billing • {sub.category?.name || 'Uncategorized'}
-                  </motion.div>
+                  </Motion.div>
                 )}
-              </motion.div>
+              </Motion.div>
             ))
           )}
-        </motion.div>
+        </Motion.div>
 
-        <motion.div variants={fadeUp} style={cardStyle}>
+        <Motion.div variants={fadeUp} style={cardStyle}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <h2 style={sectionTitleStyle}>Recent Subscriptions</h2>
             <Link to="/subscriptions" style={{ fontSize: '13px', fontWeight: 650, color: '#6366f1', textDecoration: 'none' }}>
@@ -343,7 +329,7 @@ export default function Dashboard() {
             </div>
           ) : (
             subscriptions.slice(0, 5).map((sub, i) => (
-              <motion.div
+              <Motion.div
                 key={sub.id}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -376,14 +362,14 @@ export default function Dashboard() {
                 }}>
                   Rs {sub.cost}
                 </span>
-              </motion.div>
+              </Motion.div>
             ))
           )}
-        </motion.div>
-      </motion.div>
+        </Motion.div>
+      </Motion.div>
 
       {selectedSubscription && (
-        <motion.div variants={fadeUp} style={{ ...cardStyle, marginBottom: '24px' }}>
+        <Motion.div variants={fadeUp} style={{ ...cardStyle, marginBottom: '24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'flex-start' }}>
             <div>
               <h2 style={sectionTitleStyle}>Selected Subscription</h2>
@@ -408,54 +394,9 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-        </motion.div>
+        </Motion.div>
       )}
 
-      <motion.div
-        variants={fadeUp}
-        whileHover={{ scale: 1.01 }}
-        style={{
-          ...cardStyle,
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div style={{ flex: 1 }}>
-            <h2 style={{ fontSize: '17px', fontWeight: 750, lineHeight: 1.25, color: '#fff', marginBottom: '8px' }}>
-              AI Spending Insights
-            </h2>
-            {aiInsight ? (
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px', lineHeight: 1.65 }}
-              >
-                {aiInsight}
-              </motion.p>
-            ) : (
-              <p style={{ color: 'rgba(255,255,255,0.78)', fontSize: '14px', lineHeight: 1.55 }}>
-                Click analyze to get personalized AI insights about your spending
-              </p>
-            )}
-          </div>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={getAIInsight}
-            disabled={loadingAI}
-            style={{
-              background: 'rgba(255,255,255,0.2)',
-              color: '#fff',
-              padding: '10px 20px',
-              marginLeft: '16px',
-              border: '1px solid rgba(255,255,255,0.3)',
-              flexShrink: 0,
-            }}
-          >
-            {loadingAI ? 'Analyzing...' : 'Analyze'}
-          </motion.button>
-        </div>
-      </motion.div>
-    </motion.div>
+    </Motion.div>
   );
 }

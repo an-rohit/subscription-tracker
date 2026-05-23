@@ -7,6 +7,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Subscriptions from './pages/Subscriptions';
 import Analytics from './pages/Analytics';
+import RenewalTimeline from './pages/RenewalTimeline';
 import Navbar from './components/Navbar';
 
 const ProtectedRoute = ({ children }) => {
@@ -30,6 +31,9 @@ const AppRoutes = () => {
         } />
         <Route path="/analytics" element={
           <ProtectedRoute><Analytics /></ProtectedRoute>
+        } />
+        <Route path="/timeline" element={
+          <ProtectedRoute><RenewalTimeline /></ProtectedRoute>
         } />
       </Routes>
     </>
