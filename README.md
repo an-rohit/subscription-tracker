@@ -17,6 +17,7 @@ The project is also designed as a DBMS-focused academic project. It includes a n
 ## Key Features
 
 - JWT-based authentication with bcrypt password hashing.
+- Google OAuth login with explicit Gmail read-only consent for demo users.
 - Full CRUD for subscriptions.
 - Positive amount validation for subscription cost.
 - Category-based subscription organization.
@@ -26,6 +27,7 @@ The project is also designed as a DBMS-focused academic project. It includes a n
 - Renewal timeline calendar with hover logo previews.
 - Analytics page with animated graphs and hollow pie chart.
 - AI chat flow for adding subscriptions by asking missing details.
+- Gmail API scanner that searches only likely subscription emails and stores extracted subscription details.
 - Light and dark mode using CSS variables.
 - PostgreSQL trigger for automatic payment history creation.
 
@@ -40,6 +42,7 @@ The project is also designed as a DBMS-focused academic project. It includes a n
 | API Client | Axios |
 | Backend | Node.js, Express.js |
 | Authentication | JWT, bcryptjs |
+| Google APIs | OAuth 2.0, Gmail API read-only scope |
 | Database | PostgreSQL / Supabase |
 | ORM | Prisma |
 | AI | OpenRouter-compatible API |
@@ -206,6 +209,24 @@ Why this matters:
 - Works even if data is inserted outside the app.
 - Demonstrates triggers, foreign keys, and database automation.
 
+## Gmail Subscription Scanner
+
+Google Sign-In alone does not allow Gmail access. This project uses a separate Google OAuth consent flow with the Gmail read-only scope:
+
+```text
+https://www.googleapis.com/auth/gmail.readonly
+```
+
+The scanner is intended only for college/demo testing users. It does not fetch every email. It uses a focused Gmail search query for likely subscription messages, for example subscription, invoice, receipt, billing, payment, membership, renewal, and no-reply senders. The scan limit is controlled by `GMAIL_SCAN_LIMIT`.
+
+Privacy approach:
+
+- Do not store full email bodies.
+- Store only extracted subscription metadata.
+- Search likely subscription-related emails only.
+- Keep the app in Google OAuth testing mode for demo use.
+- Production use would require Google verification and restricted-scope compliance.
+
 ## API Overview
 
 ### Auth
@@ -271,6 +292,12 @@ DATABASE_URL="your_postgresql_connection_url"
 DIRECT_URL="your_direct_postgresql_connection_url"
 JWT_SECRET="your_jwt_secret"
 OPENROUTER_API_KEY="your_openrouter_api_key"
+GOOGLE_CLIENT_ID="your_google_oauth_client_id"
+GOOGLE_CLIENT_SECRET="your_google_oauth_client_secret"
+GOOGLE_REDIRECT_URI="http://localhost:5000/api/auth/google/callback"
+FRONTEND_URL="http://localhost:5173"
+SESSION_SECRET="your_token_encryption_secret"
+GMAIL_SCAN_LIMIT=150
 PORT=5000
 ```
 
@@ -428,4 +455,3 @@ User opens AI chat
 ## Short Project Summary
 
 Subscription Tracker is a full-stack subscription management system built with React, Express, Prisma, and PostgreSQL. It lets users manage recurring subscriptions, view analytics, track renewals, and add subscriptions using an AI-guided assistant. The project also includes a PostgreSQL trigger that automatically creates payment history records, making it suitable as both a practical web app and a DBMS project.
-

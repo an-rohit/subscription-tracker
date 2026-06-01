@@ -6,6 +6,7 @@ const {
   getSubscriptionById,
   updateSubscription,
   deleteSubscription,
+  autoCategorizeSubscriptions,
 } = require('../controllers/subscription.controller');
 
 const router = express.Router();
@@ -14,6 +15,7 @@ router.use(protect); // all routes below require JWT
 
 router.post('/', createSubscription);
 router.get('/', getSubscriptions);
+router.post('/auto-categorize', autoCategorizeSubscriptions);
 router.get('/:id', getSubscriptionById);
 router.put('/:id', updateSubscription);
 router.delete('/:id', deleteSubscription);

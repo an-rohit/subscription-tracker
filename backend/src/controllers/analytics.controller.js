@@ -1,10 +1,21 @@
 const prisma = require('../config/db');
+const {
+  cleanupInvalidDetectedSubscriptions,
+  expireOverdueSubscriptions,
+} = require('../services/subscriptionStatus.service');
+
+const visibleSubscriptionStatuses = ['active', 'detected'];
+const visibleStatusFilter = { in: visibleSubscriptionStatuses };
+const reminderStatusFilter = { in: ['active', 'detected', 'expired'] };
 
 // GET /api/analytics/summary
 const getSummary = async (req, res) => {
   try {
+    await expireOverdueSubscriptions(req.userId);
+    await cleanupInvalidDetectedSubscriptions(req.userId);
+
     const subscriptions = await prisma.subscription.findMany({
-      where: { userId: req.userId, status: 'active' },
+      where: { userId: req.userId, status: visibleStatusFilter },
     });
 
     let monthlyTotal = 0;
@@ -35,8 +46,11 @@ const getSummary = async (req, res) => {
 // GET /api/analytics/by-category
 const getByCategory = async (req, res) => {
   try {
+    await expireOverdueSubscriptions(req.userId);
+    await cleanupInvalidDetectedSubscriptions(req.userId);
+
     const subscriptions = await prisma.subscription.findMany({
-      where: { userId: req.userId, status: 'active' },
+      where: { userId: req.userId, status: visibleStatusFilter },
       include: { category: true },
     });
 
@@ -80,16 +94,19 @@ const getByCategory = async (req, res) => {
 // GET /api/analytics/upcoming-renewals
 const getUpcomingRenewals = async (req, res) => {
   try {
+    await expireOverdueSubscriptions(req.userId);
+    await cleanupInvalidDetectedSubscriptions(req.userId);
+
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     const next7Days = new Date();
     next7Days.setDate(today.getDate() + 7);
 
     const upcoming = await prisma.subscription.findMany({
       where: {
         userId: req.userId,
-        status: 'active',
+        status: reminderStatusFilter,
         nextRenewalDate: {
-          gte: today,
           lte: next7Days,
         },
       },
@@ -110,8 +127,11 @@ const getUpcomingRenewals = async (req, res) => {
 // GET /api/analytics/yearly
 const getYearlyBreakdown = async (req, res) => {
   try {
+    await expireOverdueSubscriptions(req.userId);
+    await cleanupInvalidDetectedSubscriptions(req.userId);
+
     const subscriptions = await prisma.subscription.findMany({
-      where: { userId: req.userId, status: 'active' },
+      where: { userId: req.userId, status: visibleStatusFilter },
     });
 
     const months = [

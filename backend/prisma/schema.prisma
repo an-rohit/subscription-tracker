@@ -9,13 +9,17 @@ datasource db {
 }
 
 model User {
-  id           Int            @id @default(autoincrement())
-  name         String
-  email        String         @unique
-  passwordHash String         @map("password_hash")
-  timezone     String         @default("Asia/Kolkata")
-  createdAt    DateTime       @default(now()) @map("created_at")
-  subscriptions Subscription[]
+  id             Int            @id @default(autoincrement())
+  googleId       String?        @map("google_id")
+  name           String
+  email          String         @unique
+  passwordHash   String?        @map("password_hash")
+  profilePicture String?        @map("profile_picture")
+  timezone       String         @default("Asia/Kolkata")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  subscriptions  Subscription[]
+  googleTokens   GoogleToken[]
+  emailScanLogs  EmailScanLog[]
 
   @@map("users")
 }
@@ -30,20 +34,25 @@ model Category {
 }
 
 model Subscription {
-  id              Int              @id @default(autoincrement())
-  userId          Int              @map("user_id")
-  categoryId      Int?             @map("category_id")
-  name            String
-  cost            Decimal          @db.Decimal(10, 2)
-  billingCycle    String           @map("billing_cycle")
-  nextRenewalDate DateTime         @map("next_renewal_date") @db.Date
-  currency        String           @default("INR")
-  status          String           @default("active")
-  domain          String?          // ← ADD THIS LINE
-  createdAt       DateTime         @default(now()) @map("created_at")
-  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  category        Category?        @relation(fields: [categoryId], references: [id])
-  paymentHistory  PaymentHistory[]
+  id                    Int              @id @default(autoincrement())
+  userId                Int              @map("user_id")
+  categoryId            Int?             @map("category_id")
+  name                  String
+  cost                  Decimal          @db.Decimal(10, 2)
+  billingCycle          String           @map("billing_cycle")
+  nextRenewalDate       DateTime         @map("next_renewal_date") @db.Date
+  currency              String           @default("INR")
+  status                String           @default("active")
+  domain                String?
+  senderEmail           String?          @map("sender_email")
+  planName              String?          @map("plan_name")
+  lastDetectedEmailDate DateTime?        @map("last_detected_email_date")
+  sourceMessageId       String?          @map("source_message_id")
+  createdAt             DateTime         @default(now()) @map("created_at")
+  updatedAt             DateTime         @updatedAt @map("updated_at")
+  user                  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category              Category?        @relation(fields: [categoryId], references: [id])
+  paymentHistory        PaymentHistory[]
 
   @@map("subscriptions")
 }
@@ -57,4 +66,31 @@ model PaymentHistory {
   subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
   @@map("payment_history")
+}
+
+model GoogleToken {
+  id           Int       @id @default(autoincrement())
+  userId       Int       @map("user_id")
+  accessToken  String    @map("access_token")
+  refreshToken String?   @map("refresh_token")
+  tokenExpiry  DateTime? @map("token_expiry")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("google_tokens")
+}
+
+model EmailScanLog {
+  id                 Int       @id @default(autoincrement())
+  userId             Int       @map("user_id")
+  scanStartedAt      DateTime  @default(now()) @map("scan_started_at")
+  scanCompletedAt    DateTime? @map("scan_completed_at")
+  status             String
+  emailsScanned      Int       @default(0) @map("emails_scanned")
+  subscriptionsFound Int       @default(0) @map("subscriptions_found")
+  errorMessage       String?   @map("error_message")
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("email_scan_logs")
 }

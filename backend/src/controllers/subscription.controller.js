@@ -1,4 +1,12 @@
 const prisma = require('../config/db');
+const {
+  categorizeUncategorizedSubscriptions,
+  getCategoryIdForSubscription,
+} = require('../services/categoryAI.service');
+const {
+  cleanupInvalidDetectedSubscriptions,
+  expireOverdueSubscriptions,
+} = require('../services/subscriptionStatus.service');
 
 const parsePositiveCost = (cost) => {
   const parsedCost = Number(cost);
@@ -18,6 +26,10 @@ const createSubscription = async (req, res) => {
       return res.status(400).json({ message: 'Cost must be a positive amount' });
     }
 
+    const inferredCategoryId = categoryId
+      ? parseInt(categoryId)
+      : await getCategoryIdForSubscription({ name, domain });
+
     const subscription = await prisma.subscription.create({
       data: {
         userId: req.userId,
@@ -25,7 +37,7 @@ const createSubscription = async (req, res) => {
         cost: parsedCost,
         billingCycle,
         nextRenewalDate: new Date(nextRenewalDate),
-        categoryId: categoryId ? parseInt(categoryId) : null,
+        categoryId: inferredCategoryId,
         currency: currency || 'INR',
         domain: domain || null,
       },
@@ -45,6 +57,9 @@ const createSubscription = async (req, res) => {
 // GET /api/subscriptions
 const getSubscriptions = async (req, res) => {
   try {
+    await expireOverdueSubscriptions(req.userId);
+    await cleanupInvalidDetectedSubscriptions(req.userId);
+
     const { status, categoryId, search } = req.query;
 
     const filters = { userId: req.userId };
@@ -54,7 +69,13 @@ const getSubscriptions = async (req, res) => {
     if (search) filters.name = { contains: search, mode: 'insensitive' };
 
     const subscriptions = await prisma.subscription.findMany({
-      where: filters,
+      where: {
+        ...filters,
+        NOT: {
+          status: 'detected',
+          cost: { lte: 0 },
+        },
+      },
       include: { category: true },
       orderBy: { nextRenewalDate: 'asc' },
     });
@@ -69,6 +90,8 @@ const getSubscriptions = async (req, res) => {
 // GET /api/subscriptions/:id
 const getSubscriptionById = async (req, res) => {
   try {
+    await expireOverdueSubscriptions(req.userId);
+
     const subscription = await prisma.subscription.findFirst({
       where: {
         id: parseInt(req.params.id),
@@ -105,17 +128,23 @@ const { name, cost, billingCycle, nextRenewalDate, categoryId, currency, status,
       return res.status(400).json({ message: 'Cost must be a positive amount' });
     }
 
+    const renewalDate = nextRenewalDate ? new Date(nextRenewalDate) : null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const normalizedStatus = status
+      || (renewalDate && renewalDate >= today && existing.status === 'expired' ? 'active' : null);
+
     const updated = await prisma.subscription.update({
       where: { id: parseInt(req.params.id) },
       data: {
         ...(name && { name }),
         ...(parsedCost !== undefined && { cost: parsedCost }),
         ...(billingCycle && { billingCycle }),
-        ...(nextRenewalDate && { nextRenewalDate: new Date(nextRenewalDate) }),
+        ...(nextRenewalDate && { nextRenewalDate: renewalDate }),
         ...(categoryId && { categoryId: parseInt(categoryId) }),
         ...(currency && { currency }),
         ...(domain !== undefined && { domain }),
-        ...(status && { status }),
+        ...(normalizedStatus && { status: normalizedStatus }),
       },
       include: { category: true },
     });
@@ -149,10 +178,24 @@ const deleteSubscription = async (req, res) => {
   }
 };
 
+// POST /api/subscriptions/auto-categorize
+const autoCategorizeSubscriptions = async (req, res) => {
+  try {
+    const result = await categorizeUncategorizedSubscriptions(req.userId);
+    res.json({
+      message: 'AI categories updated',
+      ...result,
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
 module.exports = {
   createSubscription,
   getSubscriptions,
   getSubscriptionById,
   updateSubscription,
   deleteSubscription,
+  autoCategorizeSubscriptions,
 };

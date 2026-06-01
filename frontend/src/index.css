@@ -5,35 +5,52 @@
 }
 
 :root {
-  --bg: #f5f5f5;
+  --bg: #f0f2f8;
   --surface: #ffffff;
-  --surface-soft: #f9fafb;
-  --surface-muted: #f3f4f6;
-  --text: #333333;
-  --text-muted: #666666;
-  --text-subtle: #999999;
-  --border: #e5e7eb;
-  --border-soft: #f3f4f6;
-  --primary: #6366f1;
-  --primary-soft: #ede9fe;
-  --shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+  --surface-soft: #f5f7fc;
+  --surface-muted: #eaecf4;
+  --surface-raised: #ffffff;
+  --text: #0d1117;
+  --text-muted: #4b5468;
+  --text-subtle: #8a93a8;
+  --border: #e2e6f0;
+  --border-soft: #f0f2f8;
+  --primary: #4f46e5;
+  --primary-soft: #e0e7ff;
+  --primary-glow: rgba(79, 70, 229, 0.25);
+  --shadow: 0 16px 40px rgba(13, 17, 23, 0.05);
+  --shadow-strong: 0 24px 60px rgba(13, 17, 23, 0.12);
   --input-bg: #ffffff;
+  --gradient-brand: linear-gradient(135deg, #4f46e5, #8b5cf6);
+  --gradient-hero: linear-gradient(135deg, #312e81, #1e1b4b);
+  --gradient-panel: linear-gradient(135deg, rgba(79,70,229,0.04), rgba(139,92,246,0.04));
+  
+  /* Status Colors */
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
 }
 
 :root[data-theme='dark'] {
-  --bg: #0f172a;
+  --bg: #0b0f19;
   --surface: #111827;
-  --surface-soft: #182033;
-  --surface-muted: #1f2937;
-  --text: #e5e7eb;
-  --text-muted: #cbd5e1;
-  --text-subtle: #94a3b8;
-  --border: #334155;
-  --border-soft: #243044;
+  --surface-soft: #162032;
+  --surface-muted: #1e293b;
+  --surface-raised: #1f293b;
+  --text: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-subtle: #64748b;
+  --border: #2e3c51;
+  --border-soft: #1e293b;
   --primary: #818cf8;
   --primary-soft: #312e81;
-  --shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
-  --input-bg: #0f172a;
+  --primary-glow: rgba(129, 140, 248, 0.25);
+  --shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+  --shadow-strong: 0 24px 60px rgba(0, 0, 0, 0.6);
+  --input-bg: #1e293b;
+  --gradient-brand: linear-gradient(135deg, #818cf8, #a78bfa);
+  --gradient-hero: linear-gradient(135deg, #1e1b4b, #0f172a);
+  --gradient-panel: linear-gradient(135deg, rgba(129,140,248,0.1), rgba(167,139,250,0.1));
 }
 
 body {
@@ -99,3 +116,49 @@ button {
 button:hover {
   opacity: 0.9;
 }
+
+/* ============================================================
+   Loading Skeleton Animation
+   ============================================================ */
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-soft) !important;
+  border: 1px solid var(--border) !important;
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--text) 4%, transparent) 20%,
+    color-mix(in srgb, var(--text) 8%, transparent) 50%,
+    color-mix(in srgb, var(--text) 4%, transparent) 80%,
+    transparent 100%
+  );
+  animation: skeleton-shimmer 2s infinite ease-in-out;
+}
+
+.app-shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
