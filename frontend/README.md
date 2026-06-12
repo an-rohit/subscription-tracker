@@ -1,16 +1,39 @@
-# React + Vite
+# Subscription Tracker - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the frontend for the Subscription Tracker application. It is built with React, Vite, and features a responsive design with animations, dark mode, and charting capabilities.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Framework**: React 19 + Vite
+- **Routing**: React Router DOM
+- **Animations**: Framer Motion
+- **Charts**: Recharts
+- **HTTP Client**: Axios
+- **Notifications**: React Hot Toast
 
-## React Compiler
+## Scripts
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- `npm run dev`: Starts the Vite development server.
+- `npm run build`: Builds the app for production.
+- `npm run lint`: Runs ESLint to check for code quality.
+- `npm run preview`: Previews the production build locally.
 
-## Expanding the ESLint configuration
+## Setup
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+1. Make sure you have the backend running.
+2. If your backend is running on a port other than `5000`, create a `.env` file based on `.env.example` and set `VITE_API_URL` accordingly.
+3. Install dependencies:
+   ```bash
+   npm install
+   ```
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+## Structure
+
+- `src/components`: Reusable UI components like the Navbar.
+- `src/pages`: Main application pages (Dashboard, Analytics, Subscriptions, Renewal Timeline, etc.).
+- `src/context`: Global state management via React Context (AuthContext, ThemeContext).
+- `src/services`: API service wrappers (Axios).

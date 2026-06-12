@@ -118,6 +118,12 @@ const sendRenewalReminders = async () => {
 
   for (const subscription of subscriptions) {
     const days = daysBetween(subscription.nextRenewalDate);
+    
+    // Send email ONLY at exactly 1 day remaining and exactly 0 days remaining
+    if (days !== 1 && days !== 0) {
+      continue;
+    }
+
     const reminderKey = `${subscription.id}:${subscription.nextRenewalDate.toISOString()}:${days}`;
 
     if (sentReminderKeys.has(reminderKey)) continue;
