@@ -70,14 +70,11 @@ payment_history auto-created
 
 ## Screenshots
 
-Add your screenshots in this section before pushing, for example:
-
-```md
-![Dashboard](./screenshots/dashboard.png)
-![Subscriptions](./screenshots/subscriptions.png)
-![Analytics](./screenshots/analytics.png)
-![Renewal Timeline](./screenshots/timeline.png)
-```
+<img src="./dashboard.png" alt="Screenshot" width="600">
+<img src="./subscription.png" alt="Screenshot" width="600">
+<img src="./timeline.png" alt="Screenshot" width="600">
+<img src="./analytics.png" alt="Screenshot" width="600">
+<img src="./darkmode.png" alt="Screenshot" width="600">
 
 ## Project Structure
 
